@@ -31,14 +31,16 @@
 ## Demo
 
 <!--
-  Replace this placeholder with a recording of the app:
-  1. Record a short screen capture (MP4, under 10 MB works best).
-  2. Open any issue or pull request on GitHub and drag the file into the comment box.
-  3. Copy the generated https://github.com/user-attachments/... link and paste it here on its own line.
-     GitHub renders it as an inline video player.
+  When the YouTube video is published, replace VIDEO_ID below (twice) with the ID from its URL,
+  e.g. https://www.youtube.com/watch?v=dQw4w9WgXcQ -> dQw4w9WgXcQ, and change the img src to:
+  https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg
 -->
 <p align="center">
-  <img src="docs/assets/demo-placeholder.svg" alt="Demo video placeholder" width="820">
+  <a href="https://www.youtube.com/watch?v=VIDEO_ID">
+    <img src="docs/assets/demo-placeholder.svg" alt="Watch the Video Icon Detector demo on YouTube" width="820">
+  </a>
+  <br>
+  <a href="https://www.youtube.com/watch?v=VIDEO_ID"><img src="https://img.shields.io/badge/Watch%20the%20demo-YouTube-FF0000?logo=youtube&logoColor=white" alt="Watch the demo on YouTube"></a>
 </p>
 
 ## Overview

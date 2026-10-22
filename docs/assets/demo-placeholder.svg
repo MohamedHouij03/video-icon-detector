@@ -29,6 +29,6 @@
   <rect x="380" y="580" width="90" height="14" rx="4" fill="#5B8CFF"/>
   <rect x="900" y="580" width="60" height="14" rx="4" fill="#5B8CFF"/>
 
-  <text x="640" y="652" text-anchor="middle" font-size="30" font-weight="600" fill="#E6E8EE">Demo video coming soon</text>
+  <text x="640" y="652" text-anchor="middle" font-size="30" font-weight="600" fill="#E6E8EE">Watch the demo on YouTube</text>
   <text x="640" y="686" text-anchor="middle" font-size="18" fill="#8A91A0">Scan a video, then watch detected icons appear on the player and the timeline</text>
 </svg>
