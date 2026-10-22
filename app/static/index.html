@@ -3,367 +3,77 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Video Icon Detector</title>
-<meta name="description" content="Play a video and see the icons, emojis and logos detected by Google Gemini, with timestamps.">
-<style>
-  :root {
-    --bg: #0f1115; --panel: #171a21; --panel-2: #1e222b; --border: #2a2f3a;
-    --text: #e6e8ee; --muted: #8a91a0; --accent: #5b8cff; --danger: #ff6b6b; --ok: #3ecf8e;
-    --radius: 10px;
-  }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text);
-         font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  header { display: flex; align-items: baseline; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--border); }
-  header h1 { font-size: 17px; margin: 0; }
-  header .sub { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  main { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 16px; padding: 16px 20px; }
-  @media (max-width: 1000px) { main { grid-template-columns: 1fr; padding: 12px 16px; } }
-
-  .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; }
-  .card + .card { margin-top: 12px; }
-  .card h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
-
-  /* Player + overlay */
-  .stage { position: relative; background: #000; border-radius: var(--radius); overflow: hidden; }
-  video { display: block; width: 100%; max-height: 68vh; background: #000; }
-  .overlay { position: absolute; pointer-events: none; }
-  .cell { position: absolute; width: 33.34%; height: 33.34%; display: flex; flex-direction: column; gap: 6px; padding: 10px; }
-  .cell.l { left: 0; align-items: flex-start; } .cell.c { left: 33.33%; align-items: center; } .cell.r { right: 0; align-items: flex-end; }
-  .cell.t { top: 0; justify-content: flex-start; } .cell.m { top: 33.33%; justify-content: center; } .cell.b { bottom: 0; justify-content: flex-end; }
-  .tag { background: rgba(10,12,16,.82); border: 2px solid var(--c); color: #fff; border-radius: 8px;
-         padding: 4px 9px; font-weight: 600; font-size: 13px; box-shadow: 0 2px 10px rgba(0,0,0,.5);
-         animation: pop .18s ease-out; max-width: 100%; }
-  .tag small { display: block; font-weight: 400; color: #c9cdd6; font-size: 11px; }
-  @keyframes pop { from { transform: scale(.85); opacity: 0; } }
-
-  /* Timeline */
-  .timeline { margin-top: 12px; }
-  .tl-head { display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; margin-bottom: 6px; }
-  .lanes { position: relative; }
-  .lane { display: grid; grid-template-columns: 130px 1fr; align-items: center; height: 24px; }
-  .lane .name { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 8px; }
-  .track { position: relative; height: 16px; background: var(--panel-2); border-radius: 4px; cursor: pointer; }
-  .scanned { position: absolute; top: 0; bottom: 0; background: rgba(91,140,255,.14); border-left: 1px solid rgba(91,140,255,.5); border-right: 1px solid rgba(91,140,255,.5); }
-  .seg { position: absolute; top: 2px; bottom: 2px; min-width: 4px; border-radius: 3px; background: var(--c); }
-  .playhead { position: absolute; top: 0; bottom: 0; width: 2px; background: #fff; pointer-events: none; margin-left: 130px; }
-  .empty { color: var(--muted); padding: 10px 0; }
-
-  /* Controls */
-  label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
-  .row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
-  input, select, button { font: inherit; color: var(--text); background: var(--panel-2); border: 1px solid var(--border);
-                          border-radius: 7px; padding: 7px 9px; width: 100%; }
-  button { cursor: pointer; }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-  button:disabled { opacity: .5; cursor: default; }
-  .link { background: none; border: none; color: var(--accent); padding: 0; width: auto; font-size: 12px; }
-  .status { margin-top: 10px; font-size: 13px; min-height: 20px; }
-  .status.err { color: var(--danger); } .status.ok { color: var(--ok); }
-  .steps { display: flex; gap: 4px; margin-top: 8px; }
-  .steps span { flex: 1; height: 4px; border-radius: 2px; background: var(--panel-2); }
-  .steps span.done { background: var(--accent); }
-  .steps span.now { background: var(--accent); animation: pulse 1s infinite alternate; }
-  @keyframes pulse { to { opacity: .35; } }
-
-  .list { max-height: 340px; overflow-y: auto; margin: 0 -6px; }
-  .item { display: grid; grid-template-columns: 8px 1fr auto; gap: 10px; align-items: start; padding: 7px 6px; border-radius: 7px; cursor: pointer; }
-  .item:hover { background: var(--panel-2); }
-  .item.active { background: rgba(91,140,255,.16); }
-  .item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c); margin-top: 6px; }
-  .item .t { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 12px; white-space: nowrap; }
-  .item .d { color: var(--muted); font-size: 12px; }
-  .stats { display: flex; gap: 16px; margin-bottom: 8px; }
-  .stats b { font-size: 20px; display: block; }
-  .stats span { color: var(--muted); font-size: 12px; }
-  .downloads { display: flex; gap: 12px; margin-top: 8px; }
-  .downloads a { color: var(--accent); font-size: 12px; }
-</style>
+<title>Videos · Video Icon Detector</title>
+<meta name="description" content="Choose a video to detect icons, emojis and logos with Google Gemini and review them on a timeline.">
+<link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
 <header>
-  <h1>Video Icon Detector</h1>
-  <span class="sub" id="videoName"></span>
+  <h1><a href="/">Video Icon Detector</a></h1>
 </header>
 
-<main>
-  <section>
-    <div class="stage" id="stage">
-      <video id="video" src="/api/video" controls preload="metadata"></video>
-      <div class="overlay" id="overlay"></div>
-    </div>
-
-    <div class="card timeline">
-      <div class="tl-head"><span>Timeline: click a row to jump</span><span id="clock">0:00</span></div>
-      <div class="lanes" id="lanes"><div class="empty">Run a scan or pick a report to see icons here.</div></div>
-    </div>
-  </section>
-
-  <aside>
-    <div class="card">
-      <h2>Scan</h2>
-      <div class="row">
-        <div>
-          <label for="start">Start</label>
-          <input id="start" value="0:00">
-        </div>
-        <div>
-          <label for="length">Length</label>
-          <select id="length">
-            <option value="30">30 s</option>
-            <option value="60" selected>1 min</option>
-            <option value="120">2 min</option>
-            <option value="300">5 min</option>
-            <option value="">Rest of video</option>
-          </select>
-        </div>
-        <div>
-          <label for="fps">Detail</label>
-          <select id="fps">
-            <option value="1" selected>1 fps</option>
-            <option value="2">2 fps</option>
-            <option value="4">4 fps</option>
-          </select>
-        </div>
-      </div>
-      <button class="link" id="useCurrent">Start from the current video position</button>
-      <div style="margin-top:10px"><button class="primary" id="scanBtn">Scan for icons</button></div>
-      <div class="steps" id="steps"><span></span><span></span><span></span><span></span></div>
-      <div class="status" id="status"></div>
-    </div>
-
-    <div class="card">
-      <h2>Report</h2>
-      <select id="reportSelect"><option value="">No reports yet</option></select>
-      <div id="reportInfo" style="margin-top:10px"></div>
-    </div>
-
-    <div class="card">
-      <h2>All sightings</h2>
-      <div class="list" id="sightings"><div class="empty">Nothing yet.</div></div>
-    </div>
-  </aside>
-</main>
+<div class="library">
+  <div class="library-head">
+    <h2>Videos</h2>
+    <p id="count"></p>
+  </div>
+  <div id="videos"><div class="empty">Loading videos…</div></div>
+</div>
 
 <script>
 const $ = id => document.getElementById(id);
-const video = $("video"), overlay = $("overlay");
-const COLORS = ["#ff5d73", "#5b8cff", "#ffb547", "#3ecf8e", "#c77dff", "#2ec4d6", "#ff8a4c", "#a3d65c", "#f06bd1", "#8fa3bf"];
-const STAGES = ["queued", "cutting clip", "uploading", "analyzing"];
+const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
 
-let report = null, colorOf = {}, activeKey = "";
-
-// Helpers
 const fmt = s => { s = Math.max(0, Math.round(s)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = String(s % 60).padStart(2, "0");
   return h ? `${h}:${String(m).padStart(2, "0")}:${x}` : `${m}:${x}`; };
-const parseTime = str => str.trim().split(":").reduce((acc, p) => acc * 60 + parseFloat(p || 0), 0);
-const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
-const store = { get: k => { try { return localStorage.getItem(k); } catch { return null; } },
-                set: (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} } };
+const size = b => b >= 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${Math.round(b / 1e6)} MB`;
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-// Visible window of a sighting: at least 1 s, since Gemini samples about once per second
-const endOf = s => Math.max(s.end_seconds, s.start_seconds + 1);
+function card(v) {
+  const a = el("a", "video-card");
+  a.href = `/watch/${encodeURIComponent(v.name)}`;
 
-// "top-left", "upper right corner", "center" ... -> grid cell
-function cellFor(pos) {
-  pos = (pos || "").toLowerCase();
-  const v = /top|upper/.test(pos) ? "t" : /bottom|lower/.test(pos) ? "b" : "m";
-  const h = /left/.test(pos) ? "l" : /right/.test(pos) ? "r" : "c";
-  return v + h;
+  const thumb = el("div", "thumb");
+  const img = el("img");
+  img.loading = "lazy";
+  img.alt = "";
+  img.src = `/api/videos/${encodeURIComponent(v.name)}/thumbnail`;
+  img.onerror = () => img.remove();
+  thumb.append(img);
+  if (v.duration_seconds) thumb.append(el("span", "len", fmt(v.duration_seconds)));
+
+  const meta = el("div", "meta");
+  const title = el("div", "title", v.name);
+  title.title = v.name;
+  meta.append(title, el("div", "info", size(v.size_bytes)));
+  meta.append(v.last_scan
+    ? el("span", "badge", `${plural(v.last_scan.distinct_icons, "icon")} · ${plural(v.scans, "scan")}`)
+    : el("span", "badge none", "Not scanned"));
+
+  a.append(thumb, meta);
+  return a;
 }
 
-// Fit the overlay to the visible picture, not the letterboxed element
-function placeOverlay() {
-  const vw = video.videoWidth, vh = video.videoHeight;
-  const W = video.clientWidth, H = video.clientHeight;
-  if (!vw || !vh) { Object.assign(overlay.style, { left: 0, top: 0, width: W + "px", height: H + "px" }); return; }
-  const scale = Math.min(W / vw, H / vh), w = vw * scale, h = vh * scale;
-  Object.assign(overlay.style, { left: (W - w) / 2 + "px", top: (H - h) / 2 + "px", width: w + "px", height: h + "px" });
-}
-new ResizeObserver(placeOverlay).observe(video);
-video.addEventListener("loadedmetadata", () => { placeOverlay(); renderTimeline(); });
-
-// Playback loop
-function tick() {
-  const t = video.currentTime;
-  $("clock").textContent = `${fmt(t)} / ${fmt(video.duration || 0)}`;
-  const ph = document.querySelector(".playhead");
-  if (ph && video.duration) ph.style.left = `calc((100% - 130px) * ${t / video.duration})`;
-
-  const active = report ? report.sightings.filter(s => t >= s.start_seconds && t < endOf(s)) : [];
-  const key = active.map(s => report.sightings.indexOf(s)).join(",");
-  if (key !== activeKey) {
-    activeKey = key;
-    overlay.replaceChildren();
-    const cells = {};
-    for (const s of active) {
-      const c = cellFor(s.position);
-      if (!cells[c]) { cells[c] = el("div", `cell ${c[0]} ${c[1]}`); overlay.append(cells[c]); }
-      const tag = el("div", "tag", s.icon);
-      tag.style.setProperty("--c", colorOf[s.icon.toLowerCase()]);
-      tag.append(el("small", null, `${s.category} · ${s.start}–${s.end}`));
-      cells[c].append(tag);
-    }
-    document.querySelectorAll(".item").forEach(it => it.classList.toggle("active", active.includes(report.sightings[it.dataset.i])));
-  }
-  requestAnimationFrame(tick);
-}
-requestAnimationFrame(tick);
-
-// Rendering
-function renderTimeline() {
-  const lanes = $("lanes");
-  if (!report || !report.summary.length) {
-    lanes.replaceChildren(el("div", "empty", report ? "No icons were found in the scanned range." : "Run a scan or pick a report to see icons here."));
-    return;
-  }
-  const dur = video.duration || report.duration_seconds;
-  const pct = s => `${(s / dur) * 100}%`;
-  lanes.replaceChildren();
-  for (const e of report.summary) {
-    const lane = el("div", "lane");
-    const name = el("div", "name", e.icon);
-    name.title = `${e.icon} (${e.appearances}×)`;
-    const track = el("div", "track");
-    const sc = el("div", "scanned");
-    sc.style.left = pct(report.range_start); sc.style.width = pct(report.range_end - report.range_start);
-    track.append(sc);
-    for (const s of report.sightings.filter(s => s.icon.toLowerCase() === e.icon.toLowerCase())) {
-      const seg = el("div", "seg");
-      seg.style.setProperty("--c", colorOf[e.icon.toLowerCase()]);
-      seg.style.left = pct(s.start_seconds); seg.style.width = pct(endOf(s) - s.start_seconds);
-      seg.title = `${s.icon} ${s.start}–${s.end}`;
-      track.append(seg);
-    }
-    track.addEventListener("click", ev => {
-      const r = track.getBoundingClientRect();
-      video.currentTime = ((ev.clientX - r.left) / r.width) * dur;
-    });
-    lane.append(name, track);
-    lanes.append(lane);
-  }
-  lanes.append(el("div", "playhead"));
-}
-
-function renderReport() {
-  colorOf = {};
-  (report?.summary || []).forEach((e, i) => colorOf[e.icon.toLowerCase()] = COLORS[i % COLORS.length]);
-  activeKey = "-";
-
-  const info = $("reportInfo");
-  info.replaceChildren();
-  const list = $("sightings");
-  list.replaceChildren();
-  if (!report) { list.append(el("div", "empty", "Nothing yet.")); renderTimeline(); return; }
-
-  const stats = el("div", "stats");
-  for (const [n, l] of [[report.distinct_icons, "distinct icons"], [report.total_sightings, "appearances"], [`${fmt(report.range_start)}–${fmt(report.range_end)}`, "scanned"]]) {
-    const d = el("div"); d.append(el("b", null, n), el("span", null, l)); stats.append(d);
-  }
-  const meta = el("div", "d", `${report.model} · ${report.fps} fps · ${report.generated_at.replace("T", " ")}`);
-  meta.style.color = "var(--muted)"; meta.style.fontSize = "12px";
-  const dl = el("div", "downloads");
-  for (const f of ["json", "md"]) { const a = el("a", null, `Download .${f}`); a.href = `/api/reports/${report.job_id}?format=${f}`; dl.append(a); }
-  info.append(stats, meta, dl);
-
-  if (!report.sightings.length) list.append(el("div", "empty", "No icons found in this range."));
-  report.sightings.forEach((s, i) => {
-    const it = el("div", "item"); it.dataset.i = i;
-    const dot = el("div", "dot"); dot.style.setProperty("--c", colorOf[s.icon.toLowerCase()]);
-    const body = el("div"); body.append(el("div", null, s.icon), el("div", "d", `${s.category} · ${s.position} · ${s.description}`));
-    it.append(dot, body, el("div", "t", `${s.start}–${s.end}`));
-    it.addEventListener("click", () => { video.currentTime = s.start_seconds; video.play(); });
-    list.append(it);
-  });
-  renderTimeline();
-}
-
-// Reports
-async function loadReportList(selectId) {
-  const reports = await (await fetch("/api/reports")).json();
-  const sel = $("reportSelect");
-  sel.replaceChildren();
-  if (!reports.length) { sel.append(el("option", null, "No reports yet")); return; }
-  for (const r of reports) {
-    const o = el("option", null, `${(r.generated_at || "").replace("T", " ")} · ${fmt(r.range_start)}–${fmt(r.range_end)} · ${r.distinct_icons} icons`);
-    o.value = r.job_id; sel.append(o);
-  }
-  sel.value = selectId || store.get("report") || reports[0].job_id;
-  if (!sel.value) sel.value = reports[0].job_id;
-  await loadReport(sel.value);
-}
-async function loadReport(jobId) {
-  if (!jobId) return;
-  const res = await fetch(`/api/reports/${jobId}`);
-  if (!res.ok) return;
-  report = await res.json();
-  store.set("report", jobId);
-  $("videoName").textContent = report.video;
-  renderReport();
-}
-$("reportSelect").addEventListener("change", e => loadReport(e.target.value));
-
-// Scanning
-function setStatus(text, cls = "") { const s = $("status"); s.textContent = text; s.className = "status " + cls; }
-function setStep(stage) {
-  const i = STAGES.indexOf(stage);
-  [...$("steps").children].forEach((sp, j) => sp.className = i < 0 ? "" : j < i ? "done" : j === i ? "now" : "");
-}
-
-$("useCurrent").addEventListener("click", () => { $("start").value = fmt(video.currentTime); });
-
-$("scanBtn").addEventListener("click", async () => {
-  const start = parseTime($("start").value);
-  if (isNaN(start)) { setStatus("Start must look like 1:30 or 90.", "err"); return; }
-  const body = { start, fps: parseFloat($("fps").value) };
-  if ($("length").value) body.length = parseFloat($("length").value);
-
-  $("scanBtn").disabled = true;
-  setStatus("Queuing…"); setStep("queued");
+async function load() {
+  const box = $("videos");
   try {
-    const res = await fetch("/api/scans", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.detail?.[0]?.msg || data.detail || res.statusText);
-    store.set("task", data.task_id);
-    poll(data.task_id);
-  } catch (e) {
-    setStatus(`Could not start: ${e.message}`, "err"); setStep(null); $("scanBtn").disabled = false;
-  }
-});
-
-async function poll(taskId) {
-  $("scanBtn").disabled = true;
-  const began = Date.now();
-  while (true) {
-    let s;
-    try { s = await (await fetch(`/api/tasks/${taskId}`)).json(); }
-    catch { setStatus("Lost contact with the API, retrying…", "err"); await new Promise(r => setTimeout(r, 3000)); continue; }
-
-    if (s.status === "SUCCESS") {
-      store.set("task", null); setStep(null);
-      setStatus(`Done: ${s.result.distinct_icons} icons, ${s.result.total_sightings} appearances.`, "ok");
-      $("scanBtn").disabled = false;
-      await loadReportList(s.result.job_id);
-      video.currentTime = s.result.range_start;
+    const videos = await (await fetch("/api/videos")).json();
+    $("count").textContent = videos.length ? plural(videos.length, "video") : "";
+    if (!videos.length) {
+      const n = el("div", "notice");
+      n.append("No videos yet. Copy video files into the ", el("code", null, "videos/"), " folder and refresh this page.");
+      box.replaceChildren(n);
       return;
     }
-    if (s.status === "FAILURE") {
-      store.set("task", null); setStep(null);
-      setStatus(`Failed: ${s.error}`, "err"); $("scanBtn").disabled = false; return;
-    }
-    const secs = Math.round((Date.now() - began) / 1000);
-    if (s.status === "PROGRESS") { setStep(s.progress.stage); setStatus(`${s.progress.stage[0].toUpperCase() + s.progress.stage.slice(1)}… (${secs}s)`); }
-    else if (s.status === "RETRY") setStatus(`Temporary error, retrying soon: ${s.error}`, "err");
-    else if (s.status === "STARTED") { setStep("cutting clip"); setStatus(`Starting… (${secs}s)`); }
-    else setStatus(secs > 10 ? `Waiting for a worker… is Celery running? (${secs}s)` : "Queued…");
-    await new Promise(r => setTimeout(r, 1500));
+    const grid = el("div", "grid");
+    videos.forEach(v => grid.append(card(v)));
+    box.replaceChildren(grid);
+  } catch {
+    box.replaceChildren(el("div", "notice", "Could not load the video list. Is the API running?"));
   }
 }
 
-// Boot
-loadReportList().catch(() => {});
-const pending = store.get("task");
-if (pending) poll(pending);
+load();
 </script>
 </body>
 </html>

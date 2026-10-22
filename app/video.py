@@ -61,12 +61,16 @@ def duration(video_path: Path) -> float:
         raise VideoError("ffprobe not found on PATH") from None
 
 
-def extract_frame(video_path: Path, timestamp: str) -> bytes:
-    """Return the frame at `timestamp` (seconds or [HH:]MM:SS) as JPEG bytes."""
+def extract_frame(video_path: Path, timestamp: str, width: int | None = None) -> bytes:
+    """Return the frame at `timestamp` (seconds or [HH:]MM:SS) as JPEG bytes,
+    optionally scaled down to `width` pixels."""
     _require(video_path)
     with tempfile.TemporaryDirectory() as tmp:
         frame_path = os.path.join(tmp, "frame.jpg")
-        _run(ffmpeg.input(str(video_path), ss=timestamp).output(frame_path, vframes=1))
+        options = {"vframes": 1}
+        if width:
+            options["vf"] = f"scale={width}:-2"
+        _run(ffmpeg.input(str(video_path), ss=timestamp).output(frame_path, **options))
         # ffmpeg succeeds without writing anything when the timestamp is past the end
         if not os.path.exists(frame_path) or os.path.getsize(frame_path) == 0:
             raise VideoError(f"No frame at {timestamp}, is it past the end of the video?")

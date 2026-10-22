@@ -142,8 +142,8 @@ def save_report(report: dict) -> Path:
     return md_path
 
 
-def list_reports() -> list[dict]:
-    """Saved reports, newest first, with headline fields only."""
+def list_reports(video: str | None = None) -> list[dict]:
+    """Saved reports, newest first, with headline fields only. Optionally for one video."""
     fields = ("job_id", "video", "generated_at", "range_start", "range_end", "fps", "distinct_icons", "total_sightings")
     reports = []
     for path in settings.reports_dir.glob("*.json"):
@@ -151,5 +151,21 @@ def list_reports() -> list[dict]:
             data = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             continue
-        reports.append({k: data.get(k) for k in fields})
+        if video is None or data.get("video") == video:
+            reports.append({k: data.get(k) for k in fields})
     return sorted(reports, key=lambda r: r["generated_at"] or "", reverse=True)
+
+
+def delete_report(job_id: str) -> bool:
+    found = False
+    for fmt in ("json", "md"):
+        path = report_path(job_id, fmt)
+        if path.exists():
+            path.unlink()
+            found = True
+    return found
+
+
+def delete_reports(video: str) -> int:
+    """Delete every saved report for a video and return how many were removed."""
+    return sum(delete_report(r["job_id"]) for r in list_reports(video))
