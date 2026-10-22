@@ -1,0 +1,26 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.venv*/
+venv/
+.pytest_cache/
+
+# Generated reports
+reports/
+
+# Media
+videos/
+*.mp4
+*.mov
+*.mkv
+*.webm
+*.avi
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

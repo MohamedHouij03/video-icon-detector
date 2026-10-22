@@ -1,0 +1,9 @@
+[project]
+name = "video-icon-detector"
+version = "1.0.0"
+description = "Detect icons, emojis, stickers and logos in videos with timestamps using Google Gemini."
+readme = "README.md"
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
