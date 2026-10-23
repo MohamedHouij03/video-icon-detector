@@ -24,4 +24,4 @@ videos/
 .idea/
 .DS_Store
 Thumbs.db
-workflows
+.github/workflows
