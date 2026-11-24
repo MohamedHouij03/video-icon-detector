@@ -36,11 +36,11 @@
   https://img.youtube.com/vi/VIDEO_ID/maxresdefault.jpg
 -->
 <p align="center">
-  <a href="https://www.youtube.com/watch?v=VIDEO_ID">
+  <a href="https://www.youtube.com/watch?v=-vMkrtejLH8">
     <img src="docs/assets/demo-placeholder.svg" alt="Watch the Video Icon Detector demo on YouTube" width="820">
   </a>
   <br>
-  <a href="https://www.youtube.com/watch?v=VIDEO_ID"><img src="https://img.shields.io/badge/Watch%20the%20demo-YouTube-FF0000?logo=youtube&logoColor=white" alt="Watch the demo on YouTube"></a>
+  <a href="https://www.youtube.com/watch?v=-vMkrtejLH8"><img src="https://img.shields.io/badge/Watch%20the%20demo-YouTube-FF0000?logo=youtube&logoColor=white" alt="Watch the demo on YouTube"></a>
 </p>
 
 ## Overview
